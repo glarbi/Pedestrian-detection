@@ -5,11 +5,9 @@ import os
 import pandas as pd
 import csv
 import cv2
-from skimage import transform
 
 
-# (optional) global image normalisation
-
+""" (optional) global image normalisation """
 def gamma_correction(Image, gamma):
     for i in range(Image.shape[0]):
         for j in range(Image.shape[1]):
@@ -17,7 +15,9 @@ def gamma_correction(Image, gamma):
     return Image
 
 """Function for extracting Hog Features"""
-def hog_Method (img):
+#def hog_Method (img):
+def hog_Method (gx, gy, dimensions):
+    """ Function for calculate histogram for 9 bins with angles ( 0 20 40 60 80 100 120 140 160 180 ) """
     def calculate_histogram(magCell, dirCell):
         bins_range = (0, 180)
         bins = 9
@@ -40,9 +40,9 @@ def hog_Method (img):
             hist_norm.append(hist[i] / math.sqtr(sum))
         return hist_norm
 
-    img = np.float32(img)
-    gx = cv2.Sobel(img, cv2.CV_32F, 1, 0, ksize=1)
-    gy = cv2.Sobel(img, cv2.CV_32F, 0, 1, ksize=1)
+    #img = np.float32(img)
+    #gx = cv2.Sobel(img, cv2.CV_32F, 1, 0, ksize=1)
+    #gy = cv2.Sobel(img, cv2.CV_32F, 0, 1, ksize=1)
 
     """ Next, we will find the magnitude and direction of gradient """
 
@@ -56,19 +56,22 @@ def hog_Method (img):
     BlockHist = []
     AllBlocks = []
 
-    Height = int((img.shape[0] / cellSize_r) - 1)
-    Width = int((img.shape[1] / cellSize_r) - 1)
+    #Height = int((img.shape[0] / cellSize_r) - 1)
+    #Width = int((img.shape[1] / cellSize_r) - 1)
+
+    Height = int((dimensions[0] / cellSize_r) - 1)
+    Width = int((dimensions[1] / cellSize_r) - 1)
 
     k = 0
     i = 0
-    for r in range(0, img.shape[0], cellSize_r):
+    for r in range(0, dimensions[0], cellSize_r):
         j = 0
         if i < Height:
             for x in range(7):
                 histTemp = []
                 AllBlocks.append(histTemp)
-        for c in range(0, img.shape[1], cellSize_c):
-            cell = img[r:r + cellSize_r, c:c + cellSize_c]
+        for c in range(0, dimensions[1], cellSize_c):
+            #cell = img[r:r + cellSize_r, c:c + cellSize_c]
             cellmagnitude = magnitude[r:r + cellSize_r, c:c + cellSize_c]
             celldirection = direction[r:r + cellSize_r, c:c + cellSize_c]
             histTemp = calculate_histogram(cellmagnitude, celldirection)
@@ -130,12 +133,13 @@ def hog_Method (img):
     return hog_Feature_Vector
 
 """Function for extracting Hom Features"""
-def hom_Method(img):
-    img = np.float32(img)
+#def hom_Method(img):
+def hom_Method(gx, gy):
+    #img = np.float32(img)
 
     """I used Sobel operator in OpenCV with kernel size 1."""
-    gx = cv2.Sobel(img, cv2.CV_32F, 1, 0, ksize=1)
-    gy = cv2.Sobel(img, cv2.CV_32F, 0, 1, ksize=1)
+    #gx = cv2.Sobel(img, cv2.CV_32F, 1, 0, ksize=1)
+    #gy = cv2.Sobel(img, cv2.CV_32F, 0, 1, ksize=1)
 
     """Calculate the magnitude of image"""
     magnitude = np.sqrt(gx ** 2.0 + gy ** 2.0)
@@ -164,13 +168,13 @@ def hom_Method(img):
 
     """Calculate the histogram of magnitude"""
     histOfMag = calculHistogramOfMagnitude(magnitude, minv, maxv)
-
     return histOfMag
 
 """ Function For extracting images from a specific folder """
 def load_images_from_folder(folder):
     images = []
     for filename in os.listdir(folder):
+        print ("filename ",filename)
         img = cv2.cvtColor(cv2.imread(os.path.join(folder,filename)),cv2.COLOR_BGR2GRAY)
         if img is not None:
             images.append(img)
@@ -182,24 +186,32 @@ images = []
 
 """Extracing images """
 """The folder that contains images """
-folder = r'C:\Users\Ce Pc\PycharmProjects\Data\set01\V004\images'
+folder = r'./images/'
+#folder = os.getcwd()  # For the working folder, if we need it
 images = load_images_from_folder(folder)
 
 HomFeat = []
 HogFeat = []
 for i in range(0,len(images)):
     testimg = images[i]
-    """Because still we don't know how to select the ROI i resized the image to (128,64) """
-    testimg = transform.resize(testimg, (128, 64))
+    """ Because still we don't know how to select the ROI we resized the image to (128,64) """
+    #testimg = transform.resize(testimg, (128, 64))  This function generates a black image, I don't know why !!!
+    testimg = cv2.resize(testimg, (64, 128))
+    
+    """ Calculate Gradient (gx, gy) """
+    testimg = np.float32(testimg)
+    gx = cv2.Sobel(testimg, cv2.CV_32F, 1, 0, ksize=1)
+    gy = cv2.Sobel(testimg, cv2.CV_32F, 0, 1, ksize=1)
 
-    HogFeature = hog_Method(testimg)
-    HomFeature = hom_Method(testimg)
+    HogFeature = hog_Method(gx, gy, testimg.shape)
+    HomFeature = hom_Method(gx, gy)
 
     HogFeat.append(HogFeature)
     HomFeat.append(HomFeature)
 
+
 """ save the features using numpy save with .npy extention """
-np.save("HoGfeatures_test.npy", HomFeat)
+np.save("HoGfeatures_test.npy", HogFeat)
 np.save("Homfeatures_test.npy", HomFeat)
 print("HoGfeatures_test.npy are saved")
 print("Homfeatures_test.npy are saved")

@@ -6,17 +6,18 @@ from PIL import Image
 import matplotlib.pyplot as plt
 
 """Read image"""
-im = cv2.imread('pd4.jpg')
+im = cv2.imread('./images/pd4.jpg')
 
 """Tranform image from RGB to GRAY"""
 image = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
 
 """Image To Matrix"""
-img = np.array(image)
+#img = np.array(image)
+print("dimensions : ", image.shape)
 
 """I used Sobel operator in OpenCV with kernel size 1."""
-gx = cv2.Sobel(img, cv2.CV_32F, 1, 0, ksize=1)
-gy = cv2.Sobel(img, cv2.CV_32F, 0, 1, ksize=1)
+gx = cv2.Sobel(image, cv2.CV_32F, 1, 0, ksize=1)
+gy = cv2.Sobel(image, cv2.CV_32F, 0, 1, ksize=1)
 
 """Just for trying to use cartToPolar"""
 #magnitude, angle = cv2.cartToPolar(gx, gy, angleInDegrees=True)
