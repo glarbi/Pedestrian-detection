@@ -27,10 +27,13 @@ def hog_Method (gx, gy, dimensions):
 
     """ Function for concatenate values of each histogram cell in histogram block of cells (16*16) """
     def Concatenate_Hist(block, hist):
+        return block + hist
+        
+    def Concatenate_Hist_old(block, hist):
         for i in range(len(hist)):
             block.append(hist[i])
 
-    """  Function for histogram Normalisation """
+    """  Function for histogram Normalisation (using L2 norm technique) """
     def histogramBlock_Normalisation(hist):
         sum = 0
         hist_norm = []
@@ -74,47 +77,51 @@ def hog_Method (gx, gy, dimensions):
             #cell = img[r:r + cellSize_r, c:c + cellSize_c]
             cellmagnitude = magnitude[r:r + cellSize_r, c:c + cellSize_c]
             celldirection = direction[r:r + cellSize_r, c:c + cellSize_c]
-            histTemp = calculate_histogram(cellmagnitude, celldirection)
+            histTemp = calculate_histogram(cellmagnitude, celldirection).tolist()
             # print(len(histTemp))
 
             if i == 0:
                 if (j == 0):
-                    Concatenate_Hist(AllBlocks[k], histTemp)
+                    print("i:",i, "j:",j, "k:",k)
+                    print("AllBlocks[k] : ",AllBlocks[k])
+                    print("histTemp : ",histTemp)
+                    print("AllBlocks[k] + histTemp : ",AllBlocks[k]+histTemp)
+                    AllBlocks[k] = Concatenate_Hist(AllBlocks[k], histTemp)
                     # AllBlocks[k].append(histTemp)
                 elif j == Width:
                     k1 = k - 1
-                    Concatenate_Hist(AllBlocks[k1], histTemp)
+                    AllBlocks[k1] = Concatenate_Hist(AllBlocks[k1], histTemp)
 
                 else:
-                    Concatenate_Hist(AllBlocks[k], histTemp)
-                    Concatenate_Hist(AllBlocks[k - 1], histTemp)
+                    AllBlocks[k] = Concatenate_Hist(AllBlocks[k], histTemp)
+                    AllBlocks[k - 1] = Concatenate_Hist(AllBlocks[k - 1], histTemp)
 
             if i > 0 and i < Height:
                 if j == 0:
-                    Concatenate_Hist(AllBlocks[k], histTemp)
-                    Concatenate_Hist(AllBlocks[k - Width], histTemp)
+                    AllBlocks[k] = Concatenate_Hist(AllBlocks[k], histTemp)
+                    AllBlocks[k - Width] = Concatenate_Hist(AllBlocks[k - Width], histTemp)
 
                 elif j == Width:
                     k1 = k - 1
-                    Concatenate_Hist(AllBlocks[k1], histTemp)
-                    Concatenate_Hist(AllBlocks[k1 - j], histTemp)
+                    AllBlocks[k1] = Concatenate_Hist(AllBlocks[k1], histTemp)
+                    AllBlocks[k1 - j] = Concatenate_Hist(AllBlocks[k1 - j], histTemp)
                 else:
-                    Concatenate_Hist(AllBlocks[k], histTemp)
-                    Concatenate_Hist(AllBlocks[k - 1], histTemp)
-                    Concatenate_Hist(AllBlocks[k - Width], histTemp)
-                    Concatenate_Hist(AllBlocks[k - Width - 1], histTemp)
+                    AllBlocks[k] = Concatenate_Hist(AllBlocks[k], histTemp)
+                    AllBlocks[k - 1] = Concatenate_Hist(AllBlocks[k - 1], histTemp)
+                    AllBlocks[k - Width] = Concatenate_Hist(AllBlocks[k - Width], histTemp)
+                    AllBlocks[k - Width - 1] = Concatenate_Hist(AllBlocks[k - Width - 1], histTemp)
 
             if i == Height:
                 if (j == 0):
                     k = k - (Width)
-                    Concatenate_Hist(AllBlocks[k], histTemp)
+                    AllBlocks[k] = Concatenate_Hist(AllBlocks[k], histTemp)
 
                 elif j == Width:
-                    Concatenate_Hist(AllBlocks[k - 1], histTemp)
+                    AllBlocks[k - 1] = Concatenate_Hist(AllBlocks[k - 1], histTemp)
 
                 else:
-                    Concatenate_Hist(AllBlocks[k], histTemp)
-                    Concatenate_Hist(AllBlocks[k - 1], histTemp)
+                    AllBlocks[k] = Concatenate_Hist(AllBlocks[k], histTemp)
+                    AllBlocks[k - 1] = Concatenate_Hist(AllBlocks[k - 1], histTemp)
 
             if k < len(AllBlocks):
                 k += 1
@@ -129,7 +136,9 @@ def hog_Method (gx, gy, dimensions):
     for i in range(len(AllBlocks)):
         for j in range(len(AllBlocks[i])):
             hog_Feature_Vector.append(AllBlocks[i][j])
-
+    #m = np.array(hog_Feature_Vector)
+    print("hog_Feature_Vector_dim: ", len(hog_Feature_Vector))
+    print("hog_Feature_Vector: ", hog_Feature_Vector)
     return hog_Feature_Vector
 
 """Function for extracting Hom Features"""
@@ -155,6 +164,10 @@ def hom_Method(gx, gy):
 
     """Function to calculate the histogram of an image"""
 
+    def calculHistogramOfMagnitude_new(magCell):
+        bins = 9
+        hist, _ = np.histogram(magCell, bins=bins)
+        return hist
     def calculHistogramOfMagnitude(image, minv, maxv):
         """That's faster than a loop"""
         histogram = np.empty(maxv - minv + 1)
@@ -168,6 +181,11 @@ def hom_Method(gx, gy):
 
     """Calculate the histogram of magnitude"""
     histOfMag = calculHistogramOfMagnitude(magnitude, minv, maxv)
+    histOfMag1 = calculHistogramOfMagnitude_new(magnitude)
+    print("histOfMag_dim: ", histOfMag.shape)
+    print("histOfMag: ", histOfMag)
+    print("histOfMag1_dim: ", histOfMag1.shape)
+    print("histOfMag1: ", histOfMag1)
     return histOfMag
 
 """ Function For extracting images from a specific folder """
